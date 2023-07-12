@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Stream</title>
+</head>
+<body>
+    <h1>Video Stream</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+
+    <script>
+        // 비디오 요소 가져오기
+        var video = document.getElementById("video");
+
+        // 비디오 스트림 가져오기
+        if (navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                })
+                .catch(function(error) {
+                    console.log("Error accessing video stream: ", error);
+                });
+        }
+    </script>
+</body>
+</html>
