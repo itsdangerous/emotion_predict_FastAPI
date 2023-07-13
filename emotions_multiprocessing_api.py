@@ -6,6 +6,7 @@ from keras.models import load_model
 from multiprocessing import Process, Queue
 
 app = Flask(__name__)
+# app.run(host='0.0.0.0.', port=9900)
 
 # 얼굴 감지 XML 로드 및 훈련된 모델 로드
 face_detection = cv2.CascadeClassifier("models//haarcascade_frontalface_default.xml")
@@ -39,9 +40,7 @@ def process_frame(frame, face_queue, result_queue, frame_counter):
     # 얼굴이 감지될 때만 감정 인식 수행
     if len(faces) > 0:
         # 가장 큰 이미지에 대해
-        face = sorted(faces, reverse=True, key=lambda x: (x[2] - x[0]) * (x[3] - x[1]))[
-            0
-        ]
+        face = sorted(faces, reverse=True, key=lambda x: (x[2] - x[0]) * (x[3] - x[1]))[0]
         (fX, fY, fW, fH) = face
         # 신경망을 위해 이미지 크기를 64*64로 조정
         roi = gray[fY : fY + fH, fX : fX + fW]
@@ -154,4 +153,4 @@ def video_feed():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=9900, debug=True)

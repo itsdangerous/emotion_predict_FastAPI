@@ -44,9 +44,7 @@ while True:
     # 얼굴이 감지될 때만 감정 인식 수행
     if len(faces) > 0:
         # 가장 큰 이미지에 대해
-        face = sorted(faces, reverse=True, key=lambda x: (x[2] - x[0]) * (x[3] - x[1]))[
-            0
-        ]
+        face = sorted(faces, reverse=True, key=lambda x: (x[2] - x[0]) * (x[3] - x[1]))[0]
         (fX, fY, fW, fH) = face
         # 신경망을 위해 이미지 크기를 64*64로 조정
         roi = gray[fY : fY + fH, fX : fX + fW]
