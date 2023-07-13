@@ -6,7 +6,6 @@ from keras.models import load_model
 from multiprocessing import Process, Queue
 
 app = Flask(__name__)
-# app.run(host='0.0.0.0.', port=9900)
 
 # 얼굴 감지 XML 로드 및 훈련된 모델 로드
 face_detection = cv2.CascadeClassifier("models//haarcascade_frontalface_default.xml")
@@ -15,13 +14,13 @@ EMOTIONS = ["Angry", "Disgusting", "Fearful", "Smile", "Sad", "Surprising", "Neu
 
 # 감정 색상 정의
 EMOTION_COLORS = {
-    "Angry": (255, 0, 0),  # 파랑
-    "Disgusting": (0, 255, 0),  # 초록
-    "Fearful": (0, 0, 128),  # 진한 빨강
-    "Smile": (0, 0, 255),  # 빨강
-    "Sad": (128, 0, 0),  # 진한 파랑
-    "Surprising": (0, 255, 255),  # 시안
-    "Neutral": (255, 255, 255),  # 흰색
+    "Angry": (255, 0, 0),
+    "Disgusting": (0, 255, 0),
+    "Fearful": (0, 0, 128),
+    "Smile": (0, 0, 255),
+    "Sad": (128, 0, 0),
+    "Surprising": (0, 255, 255),
+    "Neutral": (255, 255, 255),
 }
 
 # 감정 분석 빈도
@@ -40,7 +39,9 @@ def process_frame(frame, face_queue, result_queue, frame_counter):
     # 얼굴이 감지될 때만 감정 인식 수행
     if len(faces) > 0:
         # 가장 큰 이미지에 대해
-        face = sorted(faces, reverse=True, key=lambda x: (x[2] - x[0]) * (x[3] - x[1]))[0]
+        face = sorted(faces, reverse=True, key=lambda x: (x[2] - x[0]) * (x[3] - x[1]))[
+            0
+        ]
         (fX, fY, fW, fH) = face
         # 신경망을 위해 이미지 크기를 64*64로 조정
         roi = gray[fY : fY + fH, fX : fX + fW]
@@ -60,76 +61,52 @@ def process_frame(frame, face_queue, result_queue, frame_counter):
     face_queue.put(faces)
 
 
-def process_frames(face_queue, result_queue):
-    print("start process_frames")
-    # 웹캠 개수
-    num_cameras = face_queue.qsize()
-
-    # 웹캠 비디오 캡처
-    cameras = [cv2.VideoCapture(i) for i in range(num_cameras)]
+def generate_frames(camera):
+    face_queue = Queue()
+    result_queue = Queue()
 
     frame_counter = 0  # 프레임 카운터 초기화
 
     while True:
-        # 각 웹캠에서 이미지 캡처
-        frames = [camera.read()[1] for camera in cameras]
+        # 이미지 캡처
+        frame = camera.read()[1]
 
         # 얼굴 감지 결과를 받아오기 위한 큐 비우기
         while not face_queue.empty():
             face_queue.get()
 
         # 프로세스 생성 및 시작
-        processes = [
-            Process(
-                target=process_frame,
-                args=(frame, face_queue, result_queue, frame_counter),
-            )
-            for frame in frames
-        ]
-        for process in processes:
-            process.start()
+        process = Process(
+            target=process_frame,
+            args=(frame, face_queue, result_queue, frame_counter),
+        )
+        process.start()
 
         # 프로세스 종료 대기
-        for process in processes:
-            process.join()
+        process.join()
 
         # 얼굴 감지 결과 가져오기
-        faces = [face_queue.get() for _ in range(num_cameras)]
+        faces = face_queue.get()
 
         # 결과 큐에서 결과 가져오기
-        results = [result_queue.get() for _ in range(num_cameras)]
+        result = result_queue.get()
 
         # 결과를 프레임에 그리기
-        for i, (frame, (face, label)) in enumerate(zip(frames, results)):
-            if len(faces[i]) > 0:
-                (fX, fY, fW, fH) = face
-                # 라벨링 지정
-                color = EMOTION_COLORS[label]
-                cv2.putText(
-                    frame,
-                    label,
-                    (fX, fY - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.45,
-                    color,
-                    2,
-                )
-                cv2.rectangle(frame, (fX, fY), (fX + fW, fY + fH), color, 2)
+        if len(faces) > 0:
+            (fX, fY, fW, fH) = result[0]
+            # 라벨링 지정
+            color = EMOTION_COLORS[result[1]]
+            cv2.putText(
+                frame,
+                result[1],
+                (fX, fY - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.45,
+                color,
+                2,
+            )
+            cv2.rectangle(frame, (fX, fY), (fX + fW, fY + fH), color, 2)
 
-        print(f"frames : {frames}")
-        # 프레임 반환
-        yield frames
-
-
-def generate_frames():
-    # 얼굴 큐 및 결과 큐 생성
-    face_queue = Queue()
-    result_queue = Queue()
-
-    # 프레임 처리
-    frames = process_frames(face_queue, result_queue)
-
-    for frame in frames:
         # 이미지를 바이트 스트림으로 인코딩
         ret, buffer = cv2.imencode(".jpg", frame)
         frame_bytes = buffer.tobytes()
@@ -139,6 +116,8 @@ def generate_frames():
             b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
         )
 
+        frame_counter += 1
+
 
 @app.route("/")
 def index():
@@ -147,10 +126,11 @@ def index():
 
 @app.route("/video_feed")
 def video_feed():
+    camera = cv2.VideoCapture(0)
     return Response(
-        generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame"
+        generate_frames(camera), mimetype="multipart/x-mixed-replace; boundary=frame"
     )
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=9900, debug=True)
+    app.run(host="0.0.0.0", debug=True)
