@@ -82,7 +82,7 @@
                             updateChart(data.emotion, data.probability[data.emotion]);
                         }
 
-                        if (data.stopVideo || data.probability["Happy"] > 0.5) {
+                        if (data.stopVideo || (data.emotion && data.probability["Happy"]) > 0.5) {
                             // 모달 창에 메시지 표시
                             const modal = document.getElementById('modal');
                             modal.textContent = '웃었네요 ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ';
@@ -107,7 +107,7 @@
                         }
                     });
             });
-        }, 1000);
+        }, 500);
     </script>
 </body>
 
