@@ -7,14 +7,15 @@ WSGI | gunicorn 20.1.0
 ASGI | uvicorn 0.15.0
 model Framework | tensorflow 2.12.0
 
-## requirements.txt is served
+requirements.txt is served
 
-### follow
+## Follow
 
-pip install --upgradae pip -> pip-23.2
-python -m venv .venv
-. ./venv/bin/activate
-pip install -r requirements.txt
-sudo ./.venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app -b 0.0.0.0:80
+pip install --upgradae pip -> pip-23.2 <br>
+python -m venv .venv <br>
+. ./venv/bin/activate <br>
+pip install -r requirements.txt <br>
+sudo ./.venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app -b 0.0.0.0:80 <br>
 
-api swagger :: localhost/docs
+### run server
+api swagger :: localhost/docs <br>
