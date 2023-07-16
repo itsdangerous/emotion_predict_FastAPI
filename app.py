@@ -2,8 +2,8 @@ from fastapi import FastAPI, UploadFile, File, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from typing import List
-import asyncio
+# from typing import List
+# import asyncio
 import cv2
 import numpy as np
 from keras.models import load_model
