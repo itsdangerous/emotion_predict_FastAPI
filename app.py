@@ -22,6 +22,10 @@ class AnalyzeResult(BaseModel):
     message: str
 
 
+@app.get("/")
+def home() :
+    return {"message" : "모델 예측 서버 입장!!"}
+
 @app.get("/test")
 def test():
     return {"message": "/test에 대한 요청이 성공하였습니다!!!!!!!"}
