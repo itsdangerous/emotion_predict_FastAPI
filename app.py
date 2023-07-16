@@ -1,13 +1,17 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, UploadFile, File, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
 from typing import List
 import asyncio
 import cv2
 import numpy as np
 from keras.models import load_model
 from pydantic import BaseModel
+import uvicorn
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
 
 # 각 분석 결과를 정의하기 위한 Pydantic 모델
@@ -23,10 +27,11 @@ def test():
     return {"message": "/test에 대한 요청이 성공하였습니다!!!!!!!"}
 
 
-@app.get("/video")
-def home():
+@app.get("/video", response_class=HTMLResponse)
+async def video(request: Request):
     # FastAPI에서는 별도로 HTML 템플릿을 처리하는 기능이 없으므로, video.html을 반환하는 대신 사용자에게 해당 메시지를 보여줍니다.
-    return {"message": "이 위치에서는 video.html을 반환해야 합니다"}
+    return templates.TemplateResponse("video.html", {"request": request})
+
 
 
 @app.post("/analyze", response_model=AnalyzeResult)
@@ -77,10 +82,10 @@ def analyze_image(image):
             "stopVideo": emotion == "Happy" and max_prob > 0.5,
             "message": "success",
         }
-    labeld_probabilities = dict(zip(emotions, [-1] * 7))
+    
     return {
         "emotion": "Not Detected Your Face",
-        "probability": labeld_probabilities,
+        "probability": dict(zip(emotions, [-1] * 7)),
         "stopVideo": False,
         "message": "failed",
     }
@@ -101,6 +106,4 @@ emotion_model = load_model("./models/emotion_model.hdf5")
 emotions = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=80)
+    uvicorn.run("app:app", host="0.0.0.0", port=80, reload=True)
