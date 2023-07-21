@@ -3,16 +3,30 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 # from typing import List
-# import asyncio
 import cv2
 import numpy as np
 from keras.models import load_model
 from pydantic import BaseModel
 import uvicorn
 
+# webSocket connect
+import asyncio
+import websockets
+
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
+@app.on_event("startup")
+async def startup_event():
+    while True:
+        try:
+            async with websockets.connect('ws://localhost:8080/ws') as websocket:
+                print("자바 웹소켓 서버에 연결을 성공하였습니다.")
+                data = await websocket.recv()
+                # 이렇게 받은 데이터를 이용해 원하는 작업을 수행하시면 됩니다.
+        except (websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK):
+            print("연결이 끊어졌습니다... 5초 동안 재연결을 시도합니다.")
+            await asyncio.sleep(5)
 
 # 각 분석 결과를 정의하기 위한 Pydantic 모델
 class AnalyzeResult(BaseModel):
@@ -20,7 +34,6 @@ class AnalyzeResult(BaseModel):
     probability: dict
     stopVideo: bool
     message: str
-
 
 @app.get("/")
 def home() :
