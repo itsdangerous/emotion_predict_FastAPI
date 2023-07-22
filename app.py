@@ -10,23 +10,9 @@ from pydantic import BaseModel
 import uvicorn
 
 # webSocket connect
-import asyncio
-import websockets
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
 
-@app.on_event("startup")
-async def startup_event():
-    while True:
-        try:
-            async with websockets.connect('ws://localhost:8080/ws') as websocket:
-                print("자바 웹소켓 서버에 연결을 성공하였습니다.")
-                data = await websocket.recv()
-                # 이렇게 받은 데이터를 이용해 원하는 작업을 수행하시면 됩니다.
-        except (websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK):
-            print("연결이 끊어졌습니다... 5초 동안 재연결을 시도합니다.")
-            await asyncio.sleep(5)
 
 # 각 분석 결과를 정의하기 위한 Pydantic 모델
 class AnalyzeResult(BaseModel):
@@ -35,20 +21,15 @@ class AnalyzeResult(BaseModel):
     stopVideo: bool
     message: str
 
+
 @app.get("/")
-def home() :
-    return {"message" : "모델 예측 서버 입장!!"}
+def home():
+    return {"message": "모델 예측 서버 입장!!"}
+
 
 @app.get("/test")
 def test():
     return {"message": "/test에 대한 요청이 성공하였습니다!!!!!!!"}
-
-
-@app.get("/video", response_class=HTMLResponse)
-async def video(request: Request):
-    # FastAPI에서는 별도로 HTML 템플릿을 처리하는 기능이 없으므로, video.html을 반환하는 대신 사용자에게 해당 메시지를 보여줍니다.
-    return templates.TemplateResponse("video.html", {"request": request})
-
 
 
 @app.post("/analyze", response_model=AnalyzeResult)
@@ -99,7 +80,7 @@ def analyze_image(image):
             "stopVideo": emotion == "Happy" and max_prob > 0.5,
             "message": "success",
         }
-    
+
     return {
         "emotion": "Not Detected Your Face",
         "probability": dict(zip(emotions, [-1] * 7)),
@@ -123,4 +104,4 @@ emotion_model = load_model("./models/emotion_model.hdf5")
 emotions = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=80, reload=True)
+    uvicorn.run("app:app", reload=True, Debug=True)
