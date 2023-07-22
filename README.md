@@ -31,3 +31,12 @@ sudo ./.venv/Scripts/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app -b 0
 ### run server
 
 api swagger :: localhost/docs <br>
+
+
+<br><br>
+
+connectServer.py라는 파일을 하나 더 만들었습니다.
+이 파일은 자바 서버와 웹통신을 위해, 파이썬 서버가 클라이언트 역할을 하는 코드입니다.
+
+실행하려면 아래 명령을 실행하면 됩니다.
+python connectServer.py
