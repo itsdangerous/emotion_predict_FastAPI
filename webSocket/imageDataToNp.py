@@ -3,7 +3,7 @@ import numpy as np
 import base64
 
 
-async def process_image(image: bytes):
+async def image_data_to_np(image: bytes):
     try:
         # bytes를 문자열로 변환
         image_str = image.decode("utf-8")

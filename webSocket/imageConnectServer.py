@@ -4,6 +4,7 @@ import base64
 import json
 
 import cv2
+import numpy as np
 
 from keras.models import load_model
 from imageDataToNp import image_data_to_np
@@ -27,10 +28,9 @@ async def connect_to_server(websocket):
     print("연결 완료!!!!")
 
     # /topic/messages 주제를 구독하는 메시지 전송
-    subscribe_message = "SUBSCRIBE\nid:sub-0\ndestination:/topic/image\n\n\0"
+    subscribe_message = "SUBSCRIBE\nid:sub-0\ndestination:/topic/imageData\n\n\0"
     await websocket.send(subscribe_message)
-    print("/topic/image uri 구독 완료")
-
+    print("/topic/imageData uri 구독 완료")
 
 async def receive_and_process_message(websocket):
     while True:
@@ -42,13 +42,15 @@ async def receive_and_process_message(websocket):
             processed_image, face_cascade, emotion_model, emotions
         )
 
-        print(emotion_result)
+        print(type(emotion_result))
 
         # 분석 결과를 JSON 형태로 변환
-        emotion_result_json = json.dumps(emotion_result)
+        emotion_result_json = json.dumps(emotion_result, default=lambda x: bool(x) if isinstance(x, np.bool_) else x)
+
+        print(emotion_result_json)
 
         # /app/analyze 엔드포인트로 분석 결과 전송
-        analyze_message = f"SEND\ndestination:/app/analyze\n\n{emotion_result_json}\0"
+        analyze_message = f"SEND\ndestination:/app/analyzingData\n\n{emotion_result_json}\0"
         await websocket.send(analyze_message)
 
 
